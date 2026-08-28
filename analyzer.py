@@ -35,6 +35,8 @@ def analyze_file(file):
 
         blank_lines = 0
         comment_lines = 0
+        todos = 0
+        fixmes = 0
 
         for line in lines:
             checked_line = line.strip()
@@ -42,6 +44,10 @@ def analyze_file(file):
                 blank_lines += 1
             if checked_line.startswith("#"):
                 comment_lines += 1
+            if "TODO" in checked_line:
+                todos += 1
+            if "FIXME" in checked_line:
+                fixmes += 1
 
         code_lines = len(lines) - blank_lines - comment_lines
 
@@ -104,6 +110,8 @@ def analyze_file(file):
             "return_statements": return_statements,
             "exceptions_raised": exceptions_raised,
             "assertions": assertions,
+            "todos": todos,
+            "fixmes": fixmes,
         }
 
 
