@@ -24,6 +24,7 @@ def analyze_python_files(py_files):
     for file in py_files:
         metrics = analyze_file(file)
         print(metrics)
+        print()
 
 
 def analyze_file(file):
@@ -33,26 +34,11 @@ def analyze_file(file):
         lines = source.splitlines()
         tree = ast.parse(source)
 
-        blank_lines = 0
-        comment_lines = 0
-        todos = 0
-        fixmes = 0
-
-        for line in lines:
-            checked_line = line.strip()
-            if checked_line == "":
-                blank_lines += 1
-            if checked_line.startswith("#"):
-                comment_lines += 1
-            if "TODO" in checked_line:
-                todos += 1
-            if "FIXME" in checked_line:
-                fixmes += 1
-
-        code_lines = len(lines) - blank_lines - comment_lines
+        line_data = analyze_lines(lines)
 
         functions = 0
         classes = 0
+        function_details = []
         imports = 0
         import_from = 0
         if_statements = 0
@@ -68,6 +54,30 @@ def analyze_file(file):
         for code in ast.walk(tree):
             if isinstance(code, ast.FunctionDef):
                 functions += 1
+
+                function_name = code.name
+                argument_count = len(code.args.args)
+                start_line = code.lineno
+                end_line = code.end_lineno
+                function_length = end_line - start_line + 1
+
+                complexity = calculate_complexity(code)
+
+                function_info = {
+                    "name": function_name,
+                    "lines": function_length,
+                    "arguments": argument_count,
+                    "complexity": complexity
+                }
+
+                function_details.append(function_info)
+
+                if function_length > 30:
+                    print(f"WARNING: {function_name} is a long function")
+
+                if argument_count > 5:
+                    print(f"WARNING: {function_name} has too many arguments")
+
             if isinstance(code, ast.ClassDef):
                 classes += 1
             if isinstance(code, ast.Import):
@@ -95,10 +105,11 @@ def analyze_file(file):
         return {
             "file": file,
             "total_lines": len(lines),
-            "blank_lines": blank_lines,
-            "comment_lines": comment_lines,
-            "code_lines": code_lines,
+            "blank_lines": line_data["blank_lines"],
+            "comment_lines": line_data["comment_lines"],
+            "code_lines": line_data["code_lines"],
             "functions": functions,
+            "function_details": function_details,
             "classes": classes,
             "imports": imports,
             "import_from": import_from,
@@ -110,9 +121,55 @@ def analyze_file(file):
             "return_statements": return_statements,
             "exceptions_raised": exceptions_raised,
             "assertions": assertions,
-            "todos": todos,
-            "fixmes": fixmes,
+            "todos": line_data["todos"],
+            "fixmes": line_data["fixmes"],
         }
+
+
+def analyze_lines(lines):
+    blank_lines = 0
+    comment_lines = 0
+    todos = 0
+    fixmes = 0
+
+    for line in lines:
+        checked_line = line.strip()
+        if checked_line == "":
+            blank_lines += 1
+        if checked_line.startswith("#"):
+            comment_lines += 1
+        if "TODO" in checked_line:
+            todos += 1
+        if "FIXME" in checked_line:
+            fixmes += 1
+
+    code_lines = len(lines) - blank_lines - comment_lines
+
+    return {
+        "blank_lines": blank_lines,
+        "comment_lines": comment_lines,
+        "code_lines": code_lines,
+        "todos": todos,
+        "fixmes": fixmes,
+    }    
+
+
+def calculate_complexity(function):
+    complexity = 1
+
+    for node in ast.walk(function):
+        if isinstance(node, ast.If):
+            complexity += 1
+        if isinstance(node, ast.For):
+            complexity += 1
+        if isinstance(node, ast.While):
+            complexity += 1
+        if isinstance(node, ast.ExceptHandler):
+            complexity += 1
+        if isinstance(node, ast.BoolOp):
+            complexity += len(node.values) - 1
+
+    return complexity
 
 
 if __name__ == "__main__":
