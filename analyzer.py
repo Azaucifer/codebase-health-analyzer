@@ -72,7 +72,7 @@ def parse_python_file(source, file):
     #  handling the syntax errors
     except SyntaxError as err:
         print(f"Syntax error in {file}: {err}")
-        return
+        return None
 
 
 def analyze_lines(lines):
@@ -297,7 +297,7 @@ def generate_report(metrics):
     print("CODEBASE HEALTH REPORT")
     print("=" * 50)
 
-    print(f"\nFile: {metrics['file']}")
+    print(f"\nFile: {metrics['file'].name}")
 
     print("\nLines")
     print("-" * 20)
