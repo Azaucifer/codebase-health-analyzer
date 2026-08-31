@@ -56,8 +56,6 @@ def analyze_file(file):
             line_data["fixmes"],
         )
 
-        code_rating = get_health_rating(health_score)
-
         #  unpacking dictionaries in line_data, ast_data, quality_data by using **
         return {
             "file": file,
@@ -66,7 +64,6 @@ def analyze_file(file):
             **ast_data,
             "issues": quality_data,
             "health_score": health_score,
-            "code_rating": code_rating,
         }
 
 
@@ -345,7 +342,7 @@ def generate_report(metrics):
     print("-" * 20)
 
     print(f"Score: {metrics['health_score']}/100")
-    print(f"Rating: {metrics['code_rating']}")
+    print(f"Rating: {get_health_rating(metrics['health_score'])}")
 
 
 if __name__ == "__main__":
