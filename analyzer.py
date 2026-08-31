@@ -182,6 +182,12 @@ def analyze_quality(ast_data):
         if function["arguments"] > 5:
             issues.append(f"WARNING: {function['name']} has too many arguments")
 
+        if function["complexity"] > 10:
+            issues.append(
+                f"WARNING: {function['name']} has high complexity "
+                f"({function['complexity']})"
+            )
+
     return issues
 
 
