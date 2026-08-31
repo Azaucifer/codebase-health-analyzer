@@ -38,12 +38,11 @@ def analyze_file(file):
 
         line_data = analyze_lines(lines)
         ast_data = analyze_ast(tree)
-        quality_data = analyze_quality(ast_data)
+        quality_data = analyze_quality(ast_data["function_details"])
         health_score = calculate_health_score(
-            {
-                **line_data,
-                **ast_data,
-            }
+            ast_data["function_details"],
+            line_data["todos"],
+            line_data["fixmes"],
         )
 
         code_rating = get_health_rating(health_score)
@@ -231,10 +230,10 @@ def analyze_operations(tree):
     }
 
 
-def analyze_quality(ast_data):
+def analyze_quality(function_details):
     issues = []
 
-    for function in ast_data["function_details"]:
+    for function in function_details:
         if function["lines"] > 30:
             issues.append(f"{function['name']} is a long function")
 
@@ -249,10 +248,10 @@ def analyze_quality(ast_data):
     return issues
 
 
-def calculate_health_score(metrics):
+def calculate_health_score(function_details, todos, fixmes):
     score = 100
 
-    for function in metrics["function_details"]:
+    for function in function_details:
         if function["lines"] > 30:
             score -= 5
         if function["arguments"] > 5:
@@ -260,10 +259,10 @@ def calculate_health_score(metrics):
         if function["complexity"] > 10:
             score -= 5
 
-    score -= metrics["todos"]
-    score -= metrics["fixmes"]
+    score -= todos
+    score -= fixmes
 
-    return score
+    return max(0, score)
 
 
 def get_health_rating(score):
@@ -275,7 +274,6 @@ def get_health_rating(score):
         return "Needs Improvement"
     else:
         return "Poor"
-
 
 
 def generate_report(metrics):
