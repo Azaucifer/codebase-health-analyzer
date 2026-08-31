@@ -45,7 +45,7 @@ def analyze_file(file):
             "total_lines": len(lines),
             **line_data,
             **ast_data,
-            **quality_data,
+            "issues": quality_data,
         }
 
 
