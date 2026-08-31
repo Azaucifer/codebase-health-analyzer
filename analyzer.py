@@ -39,10 +39,14 @@ def analyze_file(file):
         line_data = analyze_lines(lines)
         ast_data = analyze_ast(tree)
         quality_data = analyze_quality(ast_data)
-        health_score = calculate_health_score({
-            **line_data,
-            **ast_data,
-        })
+        health_score = calculate_health_score(
+            {
+                **line_data,
+                **ast_data,
+            }
+        )
+
+        code_rating = get_health_rating(health_score)
 
         #  unpacking dictionaries in line_data, ast_data, quality_data by using **
         return {
@@ -52,6 +56,7 @@ def analyze_file(file):
             **ast_data,
             "issues": quality_data,
             "health_score": health_score,
+            "code_rating": code_rating,
         }
 
 
@@ -248,17 +253,29 @@ def calculate_health_score(metrics):
     score = 100
 
     for function in metrics["function_details"]:
-        if function['lines'] > 30:
+        if function["lines"] > 30:
             score -= 5
-        if function['arguments'] > 5:
+        if function["arguments"] > 5:
             score -= 3
-        if function['complexity'] > 10:
+        if function["complexity"] > 10:
             score -= 5
 
     score -= metrics["todos"]
     score -= metrics["fixmes"]
 
     return score
+
+
+def get_health_rating(score):
+    if score >= 90:
+        return "Excellent"
+    elif score >= 75:
+        return "Good"
+    elif score >= 50:
+        return "Needs Improvement"
+    else:
+        return "Poor"
+
 
 
 def generate_report(metrics):
@@ -318,7 +335,8 @@ def generate_report(metrics):
     print("\nHealth Score")
     print("-" * 20)
 
-    print(f"Score: {metrics['health_score']}")
+    print(f"Score: {metrics['health_score']}/100")
+    print(f"Rating: {metrics['code_rating']}")
 
 
 if __name__ == "__main__":
