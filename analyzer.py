@@ -90,15 +90,12 @@ def analyze_ast(tree):
     exceptions_raised = 0
     assertions = 0
     function_data = analyze_functions(tree)
+    import_data = analyze_imports(tree)
 
     #  checking the code because functions and classes can be inside other functions or classes.
     for code in ast.walk(tree):
         if isinstance(code, ast.ClassDef):
             classes += 1
-        if isinstance(code, ast.Import):
-            imports += 1
-        if isinstance(code, ast.ImportFrom):
-            import_from += 1
         if isinstance(code, ast.If):
             if_statements += 1
         if isinstance(code, ast.For):
@@ -118,9 +115,8 @@ def analyze_ast(tree):
 
     return {
         **function_data,
+        **import_data,
         "classes": classes,
-        "imports": imports,
-        "import_from": import_from,
         "if_statements": if_statements,
         "for_loops": for_loops,
         "while_loops": while_loops,
@@ -180,6 +176,23 @@ def calculate_complexity(function):
             complexity += len(code.values) - 1
 
     return complexity
+
+
+def analyze_imports(tree):
+    imports = 0
+    import_from = 0
+
+    for code in ast.walk(tree):
+        if isinstance(code, ast.Import):
+            imports += 1
+
+        if isinstance(code, ast.ImportFrom):
+            import_from += 1
+
+    return {
+        "imports": imports,
+        "import_from": import_from,
+    }
 
 
 def analyze_quality(ast_data):
