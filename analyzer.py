@@ -78,9 +78,7 @@ def analyze_lines(lines):
 
 
 def analyze_ast(tree):
-    functions = 0
     classes = 0
-    function_details = []
     imports = 0
     import_from = 0
     if_statements = 0
@@ -91,29 +89,10 @@ def analyze_ast(tree):
     return_statements = 0
     exceptions_raised = 0
     assertions = 0
+    function_data = analyze_functions(tree)
 
     #  checking the code because functions and classes can be inside other functions or classes.
     for code in ast.walk(tree):
-        if isinstance(code, ast.FunctionDef):
-            functions += 1
-
-            function_name = code.name
-            argument_count = len(code.args.args)
-            start_line = code.lineno
-            end_line = code.end_lineno
-            function_length = end_line - start_line + 1
-
-            complexity = calculate_complexity(code)
-
-            function_info = {
-                "name": function_name,
-                "lines": function_length,
-                "arguments": argument_count,
-                "complexity": complexity,
-            }
-
-            function_details.append(function_info)
-
         if isinstance(code, ast.ClassDef):
             classes += 1
         if isinstance(code, ast.Import):
@@ -138,8 +117,7 @@ def analyze_ast(tree):
             assertions += 1
 
     return {
-        "functions": functions,
-        "function_details": function_details,
+        **function_data,
         "classes": classes,
         "imports": imports,
         "import_from": import_from,
@@ -151,6 +129,38 @@ def analyze_ast(tree):
         "return_statements": return_statements,
         "exceptions_raised": exceptions_raised,
         "assertions": assertions,
+    }
+
+
+def analyze_functions(tree):
+    functions = 0
+    function_details = []
+
+    #  extracting function details
+    for code in ast.walk(tree):
+        if isinstance(code, ast.FunctionDef):
+            functions += 1
+
+            function_name = code.name
+            argument_count = len(code.args.args)
+            start_line = code.lineno
+            end_line = code.end_lineno
+            function_length = end_line - start_line + 1
+
+            complexity = calculate_complexity(code)
+
+            function_info = {
+                "name": function_name,
+                "lines": function_length,
+                "arguments": argument_count,
+                "complexity": complexity,
+            }
+
+            function_details.append(function_info)
+
+    return {
+        "functions": functions,
+        "function_details": function_details,
     }
 
 
