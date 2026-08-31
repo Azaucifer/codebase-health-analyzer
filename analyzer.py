@@ -23,8 +23,13 @@ def main():
 def analyze_codebase(py_files):
     for file in py_files:
         metrics = analyze_file(file)
+
+        #  skipping files with syntax errors
+        if metrics is None:
+            continue
+
         print()
-        # print(metrics)
+        #print(metrics)
         generate_report(metrics)
         print()
 
@@ -34,7 +39,13 @@ def analyze_file(file):
     with file.open(encoding="utf-8") as f:
         source = f.read()
         lines = source.splitlines()
-        tree = ast.parse(source)
+
+        #  handling the syntax errors
+        try:
+            tree = ast.parse(source)
+        except SyntaxError as err:
+            print(f"Syntax error in {file}: {err}")
+            return
 
         line_data = analyze_lines(lines)
         ast_data = analyze_ast(tree)
