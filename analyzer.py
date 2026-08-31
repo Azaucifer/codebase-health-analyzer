@@ -6,25 +6,26 @@ import ast
 def main():
     if len(sys.argv) != 2:
         print("Usage: python analyzer.py C:/Users/name/folder")
+        return
 
-    elif len(sys.argv) == 2:
-        p = Path(sys.argv[1])
+    p = Path(sys.argv[1])
 
-        if p.is_dir():
-            #  getting only the files that end with .py
-            py_files = list(p.rglob("*.py"))
-            print(f"\nPython files: {len(py_files)}\n")
-            analyze_python_files(py_files)
+    if p.is_dir():
+        #  getting only the files that end with .py
+        py_files = list(p.rglob("*.py"))
+        print(f"\nPython files: {len(py_files)}\n")
+        analyze_python_files(py_files)
 
-        else:
-            print("This is not a valid directory")
+    else:
+        print("This is not a valid directory")
 
 
 def analyze_python_files(py_files):
     for file in py_files:
         metrics = analyze_file(file)
         print()
-        print(metrics)
+        # print(metrics)
+        generate_report(metrics)
         print()
 
 
@@ -225,18 +226,72 @@ def analyze_quality(ast_data):
 
     for function in ast_data["function_details"]:
         if function["lines"] > 30:
-            issues.append(f"WARNING: {function['name']} is a long function")
+            issues.append(f"{function['name']} is a long function")
 
         if function["arguments"] > 5:
-            issues.append(f"WARNING: {function['name']} has too many arguments")
+            issues.append(f"{function['name']} has too many arguments")
 
         if function["complexity"] > 10:
             issues.append(
-                f"WARNING: {function['name']} has high complexity "
-                f"({function['complexity']})"
+                f"{function['name']} has high complexity " f"({function['complexity']})"
             )
 
     return issues
+
+
+def generate_report(metrics):
+    print("=" * 50)
+    print("CODEBASE HEALTH REPORT")
+    print("=" * 50)
+
+    print(f"\nFile: {metrics['file']}")
+
+    print("\nLines")
+    print("-" * 20)
+    print(f"Total lines:   {metrics['total_lines']}")
+    print(f"Code lines:    {metrics['code_lines']}")
+    print(f"Blank lines:   {metrics['blank_lines']}")
+    print(f"Comment lines: {metrics['comment_lines']}")
+
+    print("\nStructure")
+    print("-" * 20)
+    print(f"Functions:     {metrics['functions']}")
+    print(f"Classes:       {metrics['classes']}")
+    print(f"Imports:       {metrics['imports']}")
+    print(f"From imports:  {metrics['import_from']}")
+
+    print("\nControl Flow")
+    print("-" * 20)
+    print(f"If statements: {metrics['if_statements']}")
+    print(f"For loops:     {metrics['for_loops']}")
+    print(f"While loops:   {metrics['while_loops']}")
+    print(f"Try blocks:    {metrics['try_blocks']}")
+
+    print("\nOperations")
+    print("-" * 20)
+    print(f"Function calls:     {metrics['function_calls']}")
+    print(f"Return statements:  {metrics['return_statements']}")
+    print(f"Exceptions raised:  {metrics['exceptions_raised']}")
+    print(f"Assertions:         {metrics['assertions']}")
+
+    print("\nFunction Analysis")
+    print("-" * 20)
+
+    for function in metrics["function_details"]:
+        print(f"{function['name']}")
+        print(f"  Lines:       {function['lines']}")
+        print(f"  Arguments:   {function['arguments']}")
+        print(f"  Complexity:  {function['complexity']}")
+        print()
+
+    print("\nQuality Issues")
+    print("-" * 20)
+
+    if metrics["issues"]:
+        for issue in metrics["issues"]:
+            print(f"WARNING: {issue}")
+    else:
+        print("No issues detected")
 
 
 if __name__ == "__main__":
