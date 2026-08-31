@@ -21,6 +21,7 @@ def main():
 
 
 def analyze_codebase(py_files):
+    results = []
     for file in py_files:
         metrics = analyze_file(file)
 
@@ -28,10 +29,14 @@ def analyze_codebase(py_files):
         if metrics is None:
             continue
 
+        results.append(metrics)
+
         print()
-        #print(metrics)
         generate_report(metrics)
         print()
+
+    generate_codebase_summary(results)
+    print()
 
 
 def analyze_file(file):
@@ -290,6 +295,39 @@ def get_health_rating(score):
         return "Needs Improvement"
     else:
         return "Poor"
+
+
+def generate_codebase_summary(results):
+    if not results:
+        print("No valid Python files found.")
+        return
+
+    total_files = len(results)
+    total_lines = sum(result["total_lines"] for result in results)
+    total_functions = sum(result["functions"] for result in results)
+    total_classes = sum(result["classes"] for result in results)
+    total_todos = sum(result["todos"] for result in results)
+    total_fixmes = sum(result["fixmes"] for result in results)
+
+    average_health_score = sum(
+        result["health_score"] for result in results
+    ) / total_files
+
+    print("=" * 50)
+    print("CODEBASE SUMMARY")
+    print("=" * 50)
+
+    print(f"\nPython files:     {total_files}")
+    print(f"Total lines:      {total_lines}")
+    print(f"Total functions:  {total_functions}")
+    print(f"Total classes:    {total_classes}")
+    print(f"Total TODOs:      {total_todos}")
+    print(f"Total FIXMEs:     {total_fixmes}")
+
+    print("\nHealth")
+    print("-" * 20)
+    print(f"Average score:    {average_health_score:.1f}/100")
+    print(f"Rating:           {get_health_rating(average_health_score)}")
 
 
 def generate_report(metrics):
