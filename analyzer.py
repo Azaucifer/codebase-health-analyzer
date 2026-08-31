@@ -78,35 +78,18 @@ def analyze_lines(lines):
 
 
 def analyze_ast(tree):
-    function_calls = 0
-    return_statements = 0
-    exceptions_raised = 0
-    assertions = 0
     function_data = analyze_functions(tree)
     import_data = analyze_imports(tree)
     control_flow_data = analyze_control_flow(tree)
     classes_data = analyze_classes(tree)
-
-    #  checking the code because functions and classes can be inside other functions or classes.
-    for code in ast.walk(tree):
-        if isinstance(code, ast.Call):
-            function_calls += 1
-        if isinstance(code, ast.Return):
-            return_statements += 1
-        if isinstance(code, ast.Raise):
-            exceptions_raised += 1
-        if isinstance(code, ast.Assert):
-            assertions += 1
+    operations_data = analyze_operations(tree)
 
     return {
         **function_data,
         **import_data,
         **control_flow_data,
         **classes_data,
-        "function_calls": function_calls,
-        "return_statements": return_statements,
-        "exceptions_raised": exceptions_raised,
-        "assertions": assertions,
+        **operations_data,
     }
 
 
@@ -209,8 +192,32 @@ def analyze_classes(tree):
             classes += 1
 
     return {
-            "classes": classes,
-        }
+        "classes": classes,
+    }
+
+
+def analyze_operations(tree):
+    function_calls = 0
+    return_statements = 0
+    exceptions_raised = 0
+    assertions = 0
+
+    for code in ast.walk(tree):
+        if isinstance(code, ast.Call):
+            function_calls += 1
+        if isinstance(code, ast.Return):
+            return_statements += 1
+        if isinstance(code, ast.Raise):
+            exceptions_raised += 1
+        if isinstance(code, ast.Assert):
+            assertions += 1
+
+    return {
+        "function_calls": function_calls,
+        "return_statements": return_statements,
+        "exceptions_raised": exceptions_raised,
+        "assertions": assertions,
+    }
 
 
 def analyze_quality(ast_data):
