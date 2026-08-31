@@ -39,6 +39,10 @@ def analyze_file(file):
         line_data = analyze_lines(lines)
         ast_data = analyze_ast(tree)
         quality_data = analyze_quality(ast_data)
+        health_score = calculate_health_score({
+            **line_data,
+            **ast_data,
+        })
 
         #  unpacking dictionaries in line_data, ast_data, quality_data by using **
         return {
@@ -47,6 +51,7 @@ def analyze_file(file):
             **line_data,
             **ast_data,
             "issues": quality_data,
+            "health_score": health_score,
         }
 
 
@@ -239,6 +244,23 @@ def analyze_quality(ast_data):
     return issues
 
 
+def calculate_health_score(metrics):
+    score = 100
+
+    for function in metrics["function_details"]:
+        if function['lines'] > 30:
+            score -= 5
+        if function['arguments'] > 5:
+            score -= 3
+        if function['complexity'] > 10:
+            score -= 5
+
+    score -= metrics["todos"]
+    score -= metrics["fixmes"]
+
+    return score
+
+
 def generate_report(metrics):
     print("=" * 50)
     print("CODEBASE HEALTH REPORT")
@@ -292,6 +314,11 @@ def generate_report(metrics):
             print(f"WARNING: {issue}")
     else:
         print("No issues detected")
+
+    print("\nHealth Score")
+    print("-" * 20)
+
+    print(f"Score: {metrics['health_score']}")
 
 
 if __name__ == "__main__":
