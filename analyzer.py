@@ -184,14 +184,14 @@ def analyze_control_flow(tree):
     try_blocks = 0
 
     for code in ast.walk(tree):
-            if isinstance(code, ast.If):
-                if_statements += 1
-            if isinstance(code, ast.For):
-                for_loops += 1
-            if isinstance(code, ast.While):
-                while_loops += 1
-            if isinstance(code, ast.Try):
-                try_blocks += 1
+        if isinstance(code, ast.If):
+            if_statements += 1
+        if isinstance(code, ast.For):
+            for_loops += 1
+        if isinstance(code, ast.While):
+            while_loops += 1
+        if isinstance(code, ast.Try):
+            try_blocks += 1
 
     return {
         "if_statements": if_statements,
@@ -205,8 +205,8 @@ def analyze_classes(tree):
     classes = 0
 
     for code in ast.walk(tree):
-            if isinstance(code, ast.ClassDef):
-                classes += 1
+        if isinstance(code, ast.ClassDef):
+            classes += 1
 
     return {
             "classes": classes,
