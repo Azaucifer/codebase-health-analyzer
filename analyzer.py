@@ -37,13 +37,15 @@ def analyze_file(file):
 
         line_data = analyze_lines(lines)
         ast_data = analyze_ast(tree)
+        quality_data = analyze_quality(ast_data)
 
-        #  unpacking dictionaries in line_data and ast_data by using **
+        #  unpacking dictionaries in line_data, ast_data, quality_data by using **
         return {
             "file": file,
             "total_lines": len(lines),
             **line_data,
             **ast_data,
+            **quality_data,
         }
 
 
@@ -72,14 +74,13 @@ def analyze_lines(lines):
         "code_lines": code_lines,
         "todos": todos,
         "fixmes": fixmes,
-    }    
+    }
 
 
 def analyze_ast(tree):
     functions = 0
     classes = 0
     function_details = []
-    issues = []
     imports = 0
     import_from = 0
     if_statements = 0
@@ -108,16 +109,10 @@ def analyze_ast(tree):
                 "name": function_name,
                 "lines": function_length,
                 "arguments": argument_count,
-                "complexity": complexity
+                "complexity": complexity,
             }
 
             function_details.append(function_info)
-
-            if function_length > 30:
-                issues.append(f"WARNING: {function_name} is a long function")
-
-            if argument_count > 5:
-                issues.append(f"WARNING: {function_name} has too many arguments")
 
         if isinstance(code, ast.ClassDef):
             classes += 1
@@ -156,7 +151,6 @@ def analyze_ast(tree):
         "return_statements": return_statements,
         "exceptions_raised": exceptions_raised,
         "assertions": assertions,
-        "issues": issues,
     }
 
 
@@ -176,6 +170,19 @@ def calculate_complexity(function):
             complexity += len(code.values) - 1
 
     return complexity
+
+
+def analyze_quality(ast_data):
+    issues = []
+
+    for function in ast_data["function_details"]:
+        if function["lines"] > 30:
+            issues.append(f"WARNING: {function['name']} is a long function")
+
+        if function["arguments"] > 5:
+            issues.append(f"WARNING: {function['name']} has too many arguments")
+
+    return issues
 
 
 if __name__ == "__main__":
