@@ -14,13 +14,13 @@ def main():
         #  getting only the files that end with .py
         py_files = list(p.rglob("*.py"))
         print(f"\nPython files: {len(py_files)}\n")
-        analyze_python_files(py_files)
+        analyze_codebase(py_files)
 
     else:
         print("This is not a valid directory")
 
 
-def analyze_python_files(py_files):
+def analyze_codebase(py_files):
     for file in py_files:
         metrics = analyze_file(file)
         print()
