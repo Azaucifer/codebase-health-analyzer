@@ -23,6 +23,7 @@ def main():
 def analyze_python_files(py_files):
     for file in py_files:
         metrics = analyze_file(file)
+        print()
         print(metrics)
         print()
 
@@ -35,94 +36,14 @@ def analyze_file(file):
         tree = ast.parse(source)
 
         line_data = analyze_lines(lines)
+        ast_data = analyze_ast(tree)
 
-        functions = 0
-        classes = 0
-        function_details = []
-        imports = 0
-        import_from = 0
-        if_statements = 0
-        for_loops = 0
-        while_loops = 0
-        try_blocks = 0
-        function_calls = 0
-        return_statements = 0
-        exceptions_raised = 0
-        assertions = 0
-
-        #  checking the code because functions and classes can be inside other functions or classes.
-        for code in ast.walk(tree):
-            if isinstance(code, ast.FunctionDef):
-                functions += 1
-
-                function_name = code.name
-                argument_count = len(code.args.args)
-                start_line = code.lineno
-                end_line = code.end_lineno
-                function_length = end_line - start_line + 1
-
-                complexity = calculate_complexity(code)
-
-                function_info = {
-                    "name": function_name,
-                    "lines": function_length,
-                    "arguments": argument_count,
-                    "complexity": complexity
-                }
-
-                function_details.append(function_info)
-
-                if function_length > 30:
-                    print(f"WARNING: {function_name} is a long function")
-
-                if argument_count > 5:
-                    print(f"WARNING: {function_name} has too many arguments")
-
-            if isinstance(code, ast.ClassDef):
-                classes += 1
-            if isinstance(code, ast.Import):
-                imports += 1
-            if isinstance(code, ast.ImportFrom):
-                import_from += 1
-            if isinstance(code, ast.If):
-                if_statements += 1
-            if isinstance(code, ast.For):
-                for_loops += 1
-            if isinstance(code, ast.While):
-                while_loops += 1
-            if isinstance(code, ast.Try):
-                try_blocks += 1
-            if isinstance(code, ast.Call):
-                function_calls += 1
-            if isinstance(code, ast.Return):
-                return_statements += 1
-            if isinstance(code, ast.Raise):
-                exceptions_raised += 1
-            if isinstance(code, ast.Assert):
-                assertions += 1
-
-        print()
+        #  unpacking dictionaries in line_data and ast_data by using **
         return {
             "file": file,
             "total_lines": len(lines),
-            "blank_lines": line_data["blank_lines"],
-            "comment_lines": line_data["comment_lines"],
-            "code_lines": line_data["code_lines"],
-            "functions": functions,
-            "function_details": function_details,
-            "classes": classes,
-            "imports": imports,
-            "import_from": import_from,
-            "if_statements": if_statements,
-            "for_loops": for_loops,
-            "while_loops": while_loops,
-            "try_blocks": try_blocks,
-            "function_calls": function_calls,
-            "return_statements": return_statements,
-            "exceptions_raised": exceptions_raised,
-            "assertions": assertions,
-            "todos": line_data["todos"],
-            "fixmes": line_data["fixmes"],
+            **line_data,
+            **ast_data,
         }
 
 
@@ -154,20 +75,105 @@ def analyze_lines(lines):
     }    
 
 
+def analyze_ast(tree):
+    functions = 0
+    classes = 0
+    function_details = []
+    issues = []
+    imports = 0
+    import_from = 0
+    if_statements = 0
+    for_loops = 0
+    while_loops = 0
+    try_blocks = 0
+    function_calls = 0
+    return_statements = 0
+    exceptions_raised = 0
+    assertions = 0
+
+    #  checking the code because functions and classes can be inside other functions or classes.
+    for code in ast.walk(tree):
+        if isinstance(code, ast.FunctionDef):
+            functions += 1
+
+            function_name = code.name
+            argument_count = len(code.args.args)
+            start_line = code.lineno
+            end_line = code.end_lineno
+            function_length = end_line - start_line + 1
+
+            complexity = calculate_complexity(code)
+
+            function_info = {
+                "name": function_name,
+                "lines": function_length,
+                "arguments": argument_count,
+                "complexity": complexity
+            }
+
+            function_details.append(function_info)
+
+            if function_length > 30:
+                issues.append(f"WARNING: {function_name} is a long function")
+
+            if argument_count > 5:
+                issues.append(f"WARNING: {function_name} has too many arguments")
+
+        if isinstance(code, ast.ClassDef):
+            classes += 1
+        if isinstance(code, ast.Import):
+            imports += 1
+        if isinstance(code, ast.ImportFrom):
+            import_from += 1
+        if isinstance(code, ast.If):
+            if_statements += 1
+        if isinstance(code, ast.For):
+            for_loops += 1
+        if isinstance(code, ast.While):
+            while_loops += 1
+        if isinstance(code, ast.Try):
+            try_blocks += 1
+        if isinstance(code, ast.Call):
+            function_calls += 1
+        if isinstance(code, ast.Return):
+            return_statements += 1
+        if isinstance(code, ast.Raise):
+            exceptions_raised += 1
+        if isinstance(code, ast.Assert):
+            assertions += 1
+
+    return {
+        "functions": functions,
+        "function_details": function_details,
+        "classes": classes,
+        "imports": imports,
+        "import_from": import_from,
+        "if_statements": if_statements,
+        "for_loops": for_loops,
+        "while_loops": while_loops,
+        "try_blocks": try_blocks,
+        "function_calls": function_calls,
+        "return_statements": return_statements,
+        "exceptions_raised": exceptions_raised,
+        "assertions": assertions,
+        "issues": issues,
+    }
+
+
 def calculate_complexity(function):
     complexity = 1
 
-    for node in ast.walk(function):
-        if isinstance(node, ast.If):
+    for code in ast.walk(function):
+        if isinstance(code, ast.If):
             complexity += 1
-        if isinstance(node, ast.For):
+        if isinstance(code, ast.For):
             complexity += 1
-        if isinstance(node, ast.While):
+        if isinstance(code, ast.While):
             complexity += 1
-        if isinstance(node, ast.ExceptHandler):
+        if isinstance(code, ast.ExceptHandler):
             complexity += 1
-        if isinstance(node, ast.BoolOp):
-            complexity += len(node.values) - 1
+        if isinstance(code, ast.BoolOp):
+            complexity += len(code.values) - 1
 
     return complexity
 
