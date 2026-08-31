@@ -78,32 +78,17 @@ def analyze_lines(lines):
 
 
 def analyze_ast(tree):
-    classes = 0
-    imports = 0
-    import_from = 0
-    if_statements = 0
-    for_loops = 0
-    while_loops = 0
-    try_blocks = 0
     function_calls = 0
     return_statements = 0
     exceptions_raised = 0
     assertions = 0
     function_data = analyze_functions(tree)
     import_data = analyze_imports(tree)
+    control_flow_data = analyze_control_flow(tree)
+    classes_data = analyze_classes(tree)
 
     #  checking the code because functions and classes can be inside other functions or classes.
     for code in ast.walk(tree):
-        if isinstance(code, ast.ClassDef):
-            classes += 1
-        if isinstance(code, ast.If):
-            if_statements += 1
-        if isinstance(code, ast.For):
-            for_loops += 1
-        if isinstance(code, ast.While):
-            while_loops += 1
-        if isinstance(code, ast.Try):
-            try_blocks += 1
         if isinstance(code, ast.Call):
             function_calls += 1
         if isinstance(code, ast.Return):
@@ -116,11 +101,8 @@ def analyze_ast(tree):
     return {
         **function_data,
         **import_data,
-        "classes": classes,
-        "if_statements": if_statements,
-        "for_loops": for_loops,
-        "while_loops": while_loops,
-        "try_blocks": try_blocks,
+        **control_flow_data,
+        **classes_data,
         "function_calls": function_calls,
         "return_statements": return_statements,
         "exceptions_raised": exceptions_raised,
@@ -193,6 +175,42 @@ def analyze_imports(tree):
         "imports": imports,
         "import_from": import_from,
     }
+
+
+def analyze_control_flow(tree):
+    if_statements = 0
+    for_loops = 0
+    while_loops = 0
+    try_blocks = 0
+
+    for code in ast.walk(tree):
+            if isinstance(code, ast.If):
+                if_statements += 1
+            if isinstance(code, ast.For):
+                for_loops += 1
+            if isinstance(code, ast.While):
+                while_loops += 1
+            if isinstance(code, ast.Try):
+                try_blocks += 1
+
+    return {
+        "if_statements": if_statements,
+        "for_loops": for_loops,
+        "while_loops": while_loops,
+        "try_blocks": try_blocks,
+    }
+
+
+def analyze_classes(tree):
+    classes = 0
+
+    for code in ast.walk(tree):
+            if isinstance(code, ast.ClassDef):
+                classes += 1
+
+    return {
+            "classes": classes,
+        }
 
 
 def analyze_quality(ast_data):
