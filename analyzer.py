@@ -40,11 +40,9 @@ def analyze_file(file):
         source = f.read()
         lines = source.splitlines()
 
-        #  handling the syntax errors
-        try:
-            tree = ast.parse(source)
-        except SyntaxError as err:
-            print(f"Syntax error in {file}: {err}")
+        tree = parse_python_file(source, file)
+
+        if tree is None:
             return
 
         line_data = analyze_lines(lines)
@@ -56,7 +54,7 @@ def analyze_file(file):
             line_data["fixmes"],
         )
 
-        #  unpacking dictionaries in line_data, ast_data, quality_data by using **
+        #  ** is used to unpack dictionaries
         return {
             "file": file,
             "total_lines": len(lines),
@@ -65,6 +63,16 @@ def analyze_file(file):
             "issues": quality_data,
             "health_score": health_score,
         }
+
+
+def parse_python_file(source, file):
+    try:
+        return ast.parse(source)
+
+    #  handling the syntax errors
+    except SyntaxError as err:
+        print(f"Syntax error in {file}: {err}")
+        return
 
 
 def analyze_lines(lines):
