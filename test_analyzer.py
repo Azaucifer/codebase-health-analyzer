@@ -2,6 +2,7 @@ import pytest
 from pathlib import Path
 import sys
 import ast
+import json
 
 from analyzer import (
     analyze_file,
@@ -19,6 +20,25 @@ from analyzer import (
     display_quality_issues_metrics,
     main,
 )
+
+
+# Helper function to capture stdout using a temporary file
+def capture_output(func, *args, **kwargs):
+    """Capture stdout while running a function"""
+    import tempfile
+    old_stdout = sys.stdout
+    temp_file = tempfile.NamedTemporaryFile(mode='w+', delete=False)
+    sys.stdout = temp_file
+    try:
+        func(*args, **kwargs)
+        temp_file.flush()
+        with open(temp_file.name, 'r') as f:
+            return f.read()
+    finally:
+        sys.stdout = old_stdout
+        temp_file.close()
+        Path(temp_file.name).unlink(missing_ok=True)
+
 
 # ==================== Tests for get_health_rating ====================
 
@@ -431,22 +451,15 @@ def test_analyze_quality_multiple_issues():
     assert len(issues) == 3
 
 
-def test_display_quality_issues_with_todos_and_fixmes(monkeypatch):
+def test_display_quality_issues_with_todos_and_fixmes():
     """Test quality report displays TODO and FIXME warnings"""
-    import io
-
     metrics = {
         "todos": 2,
         "fixmes": 1,
         "issues": [],
     }
 
-    captured_output = io.StringIO()
-    monkeypatch.setattr("sys.stdout", captured_output)
-
-    display_quality_issues_metrics(metrics)
-
-    output = captured_output.getvalue()
+    output = capture_output(display_quality_issues_metrics, metrics)
 
     assert "TODOs:  2" in output
     assert "FIXMEs: 1" in output
@@ -454,22 +467,15 @@ def test_display_quality_issues_with_todos_and_fixmes(monkeypatch):
     assert "WARNING: 1 FIXME(s) found" in output
 
 
-def test_display_quality_issues_no_issues(monkeypatch):
+def test_display_quality_issues_no_issues():
     """Test quality report when no issues exist"""
-    import io
-
     metrics = {
         "todos": 0,
         "fixmes": 0,
         "issues": [],
     }
 
-    captured_output = io.StringIO()
-    monkeypatch.setattr("sys.stdout", captured_output)
-
-    display_quality_issues_metrics(metrics)
-
-    output = captured_output.getvalue()
+    output = capture_output(display_quality_issues_metrics, metrics)
 
     assert "TODOs:  0" in output
     assert "FIXMEs: 0" in output
@@ -526,21 +532,26 @@ def test():
     assert isinstance(result, ast.Module)
 
 
-def test_parse_python_file_invalid(monkeypatch):
+def test_parse_python_file_invalid():
     """Test parsing invalid Python code"""
     source = """
 def test()
     return True
 """
-    # Capture print output
-    import io
-
-    captured_output = io.StringIO()
-    monkeypatch.setattr("sys.stdout", captured_output)
-
-    result = parse_python_file(source, Path("test.py"))
+    old_stdout = sys.stdout
+    temp_file = Path("temp_output.txt")
+    sys.stdout = open(temp_file, 'w')
+    try:
+        result = parse_python_file(source, Path("test.py"))
+        sys.stdout.flush()
+        with open(temp_file, 'r') as f:
+            output = f.read()
+    finally:
+        sys.stdout = old_stdout
+        temp_file.unlink(missing_ok=True)
+    
     assert result is None
-    assert "Syntax error" in captured_output.getvalue()
+    assert "Syntax error" in output
 
 
 # ==================== Tests for analyze_file ====================
@@ -548,7 +559,6 @@ def test()
 
 def test_analyze_file_valid(tmp_path):
     """Test file analysis with valid Python file"""
-    # Create a real test file
     test_file = tmp_path / "test.py"
     test_file.write_text("""import os
 
@@ -574,81 +584,103 @@ class Greeter:
     assert result["todos"] == 1
 
 
-def test_analyze_file_syntax_error(tmp_path, monkeypatch):
+def test_analyze_file_syntax_error(tmp_path):
     """Test file analysis with syntax error"""
-    # Create a test file with syntax error
     test_file = tmp_path / "syntax_error.py"
     test_file.write_text("""def test()
     return True
 """)
 
-    # Capture print output
-    import io
-
-    captured_output = io.StringIO()
-    monkeypatch.setattr("sys.stdout", captured_output)
-
-    result = analyze_file(test_file)
+    old_stdout = sys.stdout
+    temp_file = Path("temp_output.txt")
+    sys.stdout = open(temp_file, 'w')
+    try:
+        result = analyze_file(test_file)
+        sys.stdout.flush()
+        with open(temp_file, 'r') as f:
+            output = f.read()
+    finally:
+        sys.stdout = old_stdout
+        temp_file.unlink(missing_ok=True)
+    
     assert result is None
-    assert "Syntax error" in captured_output.getvalue()
+    assert "Syntax error" in output
 
 
 # ==================== Tests for main function ====================
 
 
-def test_main_no_arguments(monkeypatch):
+def test_main_no_arguments():
     """Test main with no arguments"""
-    monkeypatch.setattr("sys.argv", ["analyzer.py"])
+    original_argv = sys.argv.copy()
+    sys.argv = ["analyzer.py"]
+    
+    try:
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 2
+    finally:
+        sys.argv = original_argv
 
-    with pytest.raises(SystemExit) as exc_info:
-        main()
 
-    assert exc_info.value.code == 2
-
-
-def test_main_invalid_directory(monkeypatch):
+def test_main_invalid_directory():
     """Test main with invalid directory"""
-    import io
-
-    captured_output = io.StringIO()
-    monkeypatch.setattr("sys.stdout", captured_output)
-    monkeypatch.setattr("sys.argv", ["analyzer.py", "/invalid/path"])
-
-    # Mock Path.is_dir to return False
+    original_argv = sys.argv.copy()
+    sys.argv = ["analyzer.py", "/invalid/path"]
+    
     original_is_dir = Path.is_dir
-    monkeypatch.setattr(Path, "is_dir", lambda self: False)
+    
+    try:
+        Path.is_dir = lambda self: False
+        
+        old_stdout = sys.stdout
+        temp_file = Path("temp_output.txt")
+        sys.stdout = open(temp_file, 'w')
+        try:
+            main()
+            sys.stdout.flush()
+            with open(temp_file, 'r') as f:
+                output = f.read()
+        finally:
+            sys.stdout = old_stdout
+            temp_file.unlink(missing_ok=True)
+        
+        assert "This is not a valid directory" in output
+    finally:
+        Path.is_dir = original_is_dir
+        sys.argv = original_argv
 
-    main()
-    assert "This is not a valid directory" in captured_output.getvalue()
 
-    # Restore
-    monkeypatch.setattr(Path, "is_dir", original_is_dir)
-
-
-def test_main_valid_directory(tmp_path, monkeypatch):
+def test_main_valid_directory(tmp_path):
     """Test main with valid directory"""
-    # Create a Python file in the temp directory
     test_file = tmp_path / "test.py"
     test_file.write_text("""def test():
     return True
 """)
 
-    import io
+    original_argv = sys.argv.copy()
+    sys.argv = ["analyzer.py", str(tmp_path)]
+    
+    try:
+        old_stdout = sys.stdout
+        temp_file = Path("temp_output.txt")
+        sys.stdout = open(temp_file, 'w')
+        try:
+            main()
+            sys.stdout.flush()
+            with open(temp_file, 'r') as f:
+                output = f.read()
+        finally:
+            sys.stdout = old_stdout
+            temp_file.unlink(missing_ok=True)
+        
+        assert "Python files: 1" in output
+        assert "CODEBASE HEALTH REPORT" in output
+    finally:
+        sys.argv = original_argv
 
-    captured_output = io.StringIO()
-    monkeypatch.setattr("sys.stdout", captured_output)
-    monkeypatch.setattr("sys.argv", ["analyzer.py", str(tmp_path)])
 
-    # Run main
-    main()
-
-    # Check output contains expected information
-    output = captured_output.getvalue()
-    assert "Python files: 1" in output
-    assert "CODEBASE HEALTH REPORT" in output
-
-
-def test_main_json_output(tmp_path, monkeypatch):
+def test_main_json_output(tmp_path):
     """Test main with JSON output enabled"""
     test_file = tmp_path / "test.py"
     test_file.write_text(
@@ -659,28 +691,29 @@ def test_main_json_output(tmp_path, monkeypatch):
 
     output_file = tmp_path / "codebase_report.json"
 
-    monkeypatch.setattr(
-        "sys.argv",
-        ["analyzer.py", str(tmp_path), "--json"],
-    )
-
-    # Change the working directory so the generated JSON
-    # file is created inside the temporary directory.
-    monkeypatch.chdir(tmp_path)
-
-    main()
-
-    assert output_file.exists()
-
-    import json
-
-    with open(output_file, encoding="utf-8") as f:
-        report = json.load(f)
-
-    assert "summary" in report
-    assert "files" in report
-    assert report["summary"]["python_files"] == 1
-    assert report["files"][0]["file"] == "test.py"
+    original_argv = sys.argv.copy()
+    original_cwd = Path.cwd()
+    sys.argv = ["analyzer.py", str(tmp_path), "--json"]
+    
+    try:
+        # Change to temp directory
+        import os
+        os.chdir(tmp_path)
+        
+        main()
+        
+        assert output_file.exists()
+        
+        with open(output_file, encoding="utf-8") as f:
+            report = json.load(f)
+        
+        assert "summary" in report
+        assert "files" in report
+        assert report["summary"]["python_files"] == 1
+        assert report["files"][0]["file"] == "test.py"
+    finally:
+        sys.argv = original_argv
+        os.chdir(original_cwd)
 
 
 # ==================== Integration Tests ====================
@@ -688,7 +721,6 @@ def test_main_json_output(tmp_path, monkeypatch):
 
 def test_full_analysis_flow(tmp_path):
     """Integration test with real file"""
-    # Create a test Python file
     test_file = tmp_path / "test.py"
     test_file.write_text("""import sys
 
@@ -712,12 +744,10 @@ def complex_function(a, b, c, d, e, f):
 # FIXME: Performance issue
 """)
 
-    # Count lines in the file
     with open(test_file, "r") as f:
         lines = f.readlines()
         actual_line_count = len(lines)
 
-    # Test analyze_file directly
     result = analyze_file(test_file)
 
     assert result is not None
@@ -769,7 +799,6 @@ def greet():
 
 def test_large_complexity_handling():
     """Test handling of extremely high complexity"""
-    # Create a function with many nested ifs - each level needs more indentation
     code = "def complex():\n"
     indent = "    "
     code += indent + "if x0 > 0:\n"
@@ -784,7 +813,7 @@ def test_large_complexity_handling():
     tree = ast.parse(code)
     function = tree.body[0]
     complexity = calculate_complexity(function)
-    assert complexity == 21  # base 1 + 20 ifs
+    assert complexity == 21
     assert complexity > 10
 
 

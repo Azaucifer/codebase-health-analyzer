@@ -1,5 +1,4 @@
 from pathlib import Path
-import sys
 import ast
 import json
 import argparse
