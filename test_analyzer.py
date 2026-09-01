@@ -2,6 +2,7 @@ import pytest
 from pathlib import Path
 import sys
 import ast
+import os
 import json
 
 from analyzer import (
@@ -697,7 +698,6 @@ def test_main_json_output(tmp_path):
     
     try:
         # Change to temp directory
-        import os
         os.chdir(tmp_path)
         
         main()
@@ -711,6 +711,45 @@ def test_main_json_output(tmp_path):
         assert "files" in report
         assert report["summary"]["python_files"] == 1
         assert report["files"][0]["file"] == "test.py"
+    finally:
+        sys.argv = original_argv
+        os.chdir(original_cwd)
+
+
+def test_main_json_custom_output(tmp_path):
+    """Test main with a custom JSON output filename"""
+    test_file = tmp_path / "test.py"
+    test_file.write_text(
+        """def test():
+    return True
+"""
+    )
+
+    output_file = tmp_path / "custom_report.json"
+
+    original_argv = sys.argv.copy()
+    original_cwd = Path.cwd()
+    sys.argv = [
+        "analyzer.py",
+        str(tmp_path),
+        "--json",
+        "--output",
+        str(output_file),
+    ]
+
+    try:
+        main()
+
+        assert output_file.exists()
+
+        with open(output_file, encoding="utf-8") as f:
+            report = json.load(f)
+
+        assert "summary" in report
+        assert "files" in report
+        assert report["summary"]["python_files"] == 1
+        assert report["files"][0]["file"] == "test.py"
+
     finally:
         sys.argv = original_argv
         os.chdir(original_cwd)

@@ -85,6 +85,12 @@ def main():
         help="Generate a JSON report",
     )
 
+    parser.add_argument(
+        "--output",
+        default="codebase_report.json",
+        help="Output file for the JSON report"
+    )
+
     args = parser.parse_args()
 
     p = Path(args.path)
@@ -93,13 +99,21 @@ def main():
         py_files = list(p.rglob("*.py"))
         print(f"\nPython files: {len(py_files)}\n")
 
-        analyze_codebase(py_files, generate_json=args.json)
+        analyze_codebase(
+            py_files,
+            generate_json=args.json,
+            output_file=args.output,
+        )
 
     else:
         print("This is not a valid directory")
 
 
-def analyze_codebase(py_files, generate_json=False):
+def analyze_codebase(
+        py_files, 
+        generate_json=False, 
+        output_file="codebase_report.json",
+        ):
     results = []
     for file in py_files:
         metrics = analyze_file(file)
@@ -118,7 +132,7 @@ def analyze_codebase(py_files, generate_json=False):
     print()
 
     if generate_json:
-        generate_json_report(results)
+        generate_json_report(results, output_file)
 
 
 def analyze_file(file):
