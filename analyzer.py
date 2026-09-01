@@ -1,26 +1,106 @@
 from pathlib import Path
 import sys
 import ast
+import json
+import argparse
+
+
+def generate_json_report(results, output_file="codebase_report.json"):
+    if not results:
+        print("No valid Python files found.")
+        return
+
+    total_files = len(results)
+    total_lines = sum(result["total_lines"] for result in results)
+    total_functions = sum(result["functions"] for result in results)
+    total_classes = sum(result["classes"] for result in results)
+    total_todos = sum(result["todos"] for result in results)
+    total_fixmes = sum(result["fixmes"] for result in results)
+
+    average_health_score = (
+        sum(result["health_score"] for result in results) / total_files
+    )
+
+    report = {
+        "summary": {
+            "python_files": total_files,
+            "total_lines": total_lines,
+            "total_functions": total_functions,
+            "total_classes": total_classes,
+            "total_todos": total_todos,
+            "total_fixmes": total_fixmes,
+            "average_health_score": round(average_health_score, 1),
+            "rating": get_health_rating(average_health_score),
+        },
+        "files": [],
+    }
+
+    for result in results:
+        report["files"].append(
+            {
+                "file": result["file"].name,
+                "total_lines": result["total_lines"],
+                "code_lines": result["code_lines"],
+                "blank_lines": result["blank_lines"],
+                "comment_lines": result["comment_lines"],
+                "functions": result["functions"],
+                "classes": result["classes"],
+                "imports": result["imports"],
+                "import_from": result["import_from"],
+                "if_statements": result["if_statements"],
+                "for_loops": result["for_loops"],
+                "while_loops": result["while_loops"],
+                "try_blocks": result["try_blocks"],
+                "function_calls": result["function_calls"],
+                "return_statements": result["return_statements"],
+                "exceptions_raised": result["exceptions_raised"],
+                "assertions": result["assertions"],
+                "todos": result["todos"],
+                "fixmes": result["fixmes"],
+                "health_score": result["health_score"],
+                "rating": get_health_rating(result["health_score"]),
+                "issues": result["issues"],
+                "functions_details": result["function_details"],
+            }
+        )
+
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(report, f, indent=4)
+
+    print(f"JSON report saved to: {output_file}")
 
 
 def main():
-    if len(sys.argv) != 2:
-        print("Usage: python analyzer.py C:/Users/name/folder")
-        return
+    parser = argparse.ArgumentParser(
+        description="Analyze a Python codebase and generate a health report."
+    )
 
-    p = Path(sys.argv[1])
+    parser.add_argument(
+        "path",
+        help="Path to the Python codebase",
+    )
+
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Generate a JSON report",
+    )
+
+    args = parser.parse_args()
+
+    p = Path(args.path)
 
     if p.is_dir():
-        #  getting only the files that end with .py
         py_files = list(p.rglob("*.py"))
         print(f"\nPython files: {len(py_files)}\n")
-        analyze_codebase(py_files)
+
+        analyze_codebase(py_files, generate_json=args.json)
 
     else:
         print("This is not a valid directory")
 
 
-def analyze_codebase(py_files):
+def analyze_codebase(py_files, generate_json=False):
     results = []
     for file in py_files:
         metrics = analyze_file(file)
@@ -37,6 +117,9 @@ def analyze_codebase(py_files):
 
     generate_codebase_summary(results)
     print()
+
+    if generate_json:
+        generate_json_report(results)
 
 
 def analyze_file(file):

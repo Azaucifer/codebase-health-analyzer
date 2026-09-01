@@ -598,16 +598,12 @@ def test_analyze_file_syntax_error(tmp_path, monkeypatch):
 
 def test_main_no_arguments(monkeypatch):
     """Test main with no arguments"""
-    import io
-
-    captured_output = io.StringIO()
-    monkeypatch.setattr("sys.stdout", captured_output)
     monkeypatch.setattr("sys.argv", ["analyzer.py"])
 
-    main()
-    assert (
-        "Usage: python analyzer.py C:/Users/name/folder" in captured_output.getvalue()
-    )
+    with pytest.raises(SystemExit) as exc_info:
+        main()
+
+    assert exc_info.value.code == 2
 
 
 def test_main_invalid_directory(monkeypatch):
@@ -650,6 +646,41 @@ def test_main_valid_directory(tmp_path, monkeypatch):
     output = captured_output.getvalue()
     assert "Python files: 1" in output
     assert "CODEBASE HEALTH REPORT" in output
+
+
+def test_main_json_output(tmp_path, monkeypatch):
+    """Test main with JSON output enabled"""
+    test_file = tmp_path / "test.py"
+    test_file.write_text(
+        """def test():
+    return True
+"""
+    )
+
+    output_file = tmp_path / "codebase_report.json"
+
+    monkeypatch.setattr(
+        "sys.argv",
+        ["analyzer.py", str(tmp_path), "--json"],
+    )
+
+    # Change the working directory so the generated JSON
+    # file is created inside the temporary directory.
+    monkeypatch.chdir(tmp_path)
+
+    main()
+
+    assert output_file.exists()
+
+    import json
+
+    with open(output_file, encoding="utf-8") as f:
+        report = json.load(f)
+
+    assert "summary" in report
+    assert "files" in report
+    assert report["summary"]["python_files"] == 1
+    assert report["files"][0]["file"] == "test.py"
 
 
 # ==================== Integration Tests ====================

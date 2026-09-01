@@ -51,6 +51,9 @@ coverage.xml
 .pytest_cache/
 cover/
 
+# Generated reports
+codebase_report.json
+
 # Translations
 *.mo
 *.pot
