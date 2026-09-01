@@ -143,6 +143,7 @@ def analyze_functions(tree):
 
             function_info = {
                 "name": function_name,
+                "start_line": start_line,
                 "lines": function_length,
                 "arguments": argument_count,
                 "complexity": complexity,
@@ -256,14 +257,19 @@ def analyze_quality(function_details):
 
     for function in function_details:
         if function["lines"] > 30:
-            issues.append(f"{function['name']} is a long function")
+            issues.append(
+                f"{function['name']} (starts at Line {function['start_line']}): long function"
+            )
 
         if function["arguments"] > 5:
-            issues.append(f"{function['name']} has too many arguments")
+            issues.append(
+                f"{function['name']} (starts at Line {function['start_line']}): too many arguments"
+            )
 
         if function["complexity"] > 10:
             issues.append(
-                f"{function['name']} has high complexity " f"({function['complexity']})"
+                f"{function['name']} (starts at Line {function['start_line']}): "
+                f"high complexity ({function['complexity']})"
             )
 
     return issues
@@ -390,9 +396,10 @@ def display_function_analysis_metrics(metrics):
 
     for function in metrics["function_details"]:
         print(f"{function['name']}")
-        print(f"  Lines:       {function['lines']}")
-        print(f"  Arguments:   {function['arguments']}")
-        print(f"  Complexity:  {function['complexity']}")
+        print(f"  Start Line:        {function['start_line']}")
+        print(f"  Lines:             {function['lines']}")
+        print(f"  Arguments:         {function['arguments']}")
+        print(f"  Complexity:        {function['complexity']}")
         print()
 
 

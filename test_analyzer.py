@@ -190,6 +190,7 @@ def func3(a, b, c, d, e):
     assert result["function_details"][0]["name"] == "func1"
     assert result["function_details"][0]["arguments"] == 0
     assert result["function_details"][0]["complexity"] == 1
+    assert result["function_details"][0]["start_line"] == 2
 
 
 def test_analyze_functions_nested():
@@ -354,7 +355,12 @@ def debug():
 def test_analyze_quality_no_issues():
     """Test quality analysis with no issues"""
     function_details = [
-        {"name": "good_func", "lines": 5, "arguments": 2, "complexity": 3}
+        {
+            "name": "good_func",
+            "lines": 5, 
+            "arguments": 2, 
+            "complexity": 3
+            }
     ]
     issues = analyze_quality(function_details)
     assert len(issues) == 0
@@ -363,17 +369,30 @@ def test_analyze_quality_no_issues():
 def test_analyze_quality_long_function():
     """Test long function detection"""
     function_details = [
-        {"name": "long_func", "lines": 35, "arguments": 2, "complexity": 3}
+        {
+            "name": "long_func", 
+            "start_line": 10, 
+            "lines": 35, 
+            "arguments": 2, 
+            "complexity": 3
+            }
     ]
     issues = analyze_quality(function_details)
     assert len(issues) == 1
     assert "long function" in issues[0]
+    assert "starts at Line 10" in issues[0]
 
 
 def test_analyze_quality_too_many_arguments():
     """Test too many arguments detection"""
     function_details = [
-        {"name": "args_func", "lines": 5, "arguments": 6, "complexity": 3}
+        {
+            "name": "args_func",
+            "start_line": 10,
+            "lines": 5,
+            "arguments": 6,
+            "complexity": 3,
+        }
     ]
     issues = analyze_quality(function_details)
     assert len(issues) == 1
@@ -383,7 +402,13 @@ def test_analyze_quality_too_many_arguments():
 def test_analyze_quality_high_complexity():
     """Test high complexity detection"""
     function_details = [
-        {"name": "complex_func", "lines": 5, "arguments": 2, "complexity": 12}
+        {
+            "name": "complex_func",
+            "start_line": 15,
+            "lines": 5,
+            "arguments": 2,
+            "complexity": 12,
+        }
     ]
     issues = analyze_quality(function_details)
     assert len(issues) == 1
@@ -393,7 +418,13 @@ def test_analyze_quality_high_complexity():
 def test_analyze_quality_multiple_issues():
     """Test detection of multiple issues in one function"""
     function_details = [
-        {"name": "bad_func", "lines": 35, "arguments": 7, "complexity": 15}
+        {
+            "name": "bad_func",
+            "start_line": 20,
+            "lines": 35,
+            "arguments": 7,
+            "complexity": 15,
+        }
     ]
     issues = analyze_quality(function_details)
     assert len(issues) == 3
