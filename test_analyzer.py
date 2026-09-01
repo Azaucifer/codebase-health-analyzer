@@ -16,6 +16,7 @@ from analyzer import (
     calculate_health_score,
     get_health_rating,
     parse_python_file,
+    display_quality_issues_metrics,
     main,
 )
 
@@ -428,6 +429,51 @@ def test_analyze_quality_multiple_issues():
     ]
     issues = analyze_quality(function_details)
     assert len(issues) == 3
+
+
+def test_display_quality_issues_with_todos_and_fixmes(monkeypatch):
+    """Test quality report displays TODO and FIXME warnings"""
+    import io
+
+    metrics = {
+        "todos": 2,
+        "fixmes": 1,
+        "issues": [],
+    }
+
+    captured_output = io.StringIO()
+    monkeypatch.setattr("sys.stdout", captured_output)
+
+    display_quality_issues_metrics(metrics)
+
+    output = captured_output.getvalue()
+
+    assert "TODOs:  2" in output
+    assert "FIXMEs: 1" in output
+    assert "WARNING: 2 TODO(s) found" in output
+    assert "WARNING: 1 FIXME(s) found" in output
+
+
+def test_display_quality_issues_no_issues(monkeypatch):
+    """Test quality report when no issues exist"""
+    import io
+
+    metrics = {
+        "todos": 0,
+        "fixmes": 0,
+        "issues": [],
+    }
+
+    captured_output = io.StringIO()
+    monkeypatch.setattr("sys.stdout", captured_output)
+
+    display_quality_issues_metrics(metrics)
+
+    output = captured_output.getvalue()
+
+    assert "TODOs:  0" in output
+    assert "FIXMEs: 0" in output
+    assert "No issues detected" in output
 
 
 # ==================== Tests for calculate_health_score ====================

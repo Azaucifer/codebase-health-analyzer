@@ -414,7 +414,14 @@ def display_quality_issues_metrics(metrics):
     if metrics["issues"]:
         for issue in metrics["issues"]:
             print(f"WARNING: {issue}")
-    else:
+
+    if metrics["todos"] > 0:
+        print(f"WARNING: {metrics['todos']} TODO(s) found")
+
+    if metrics["fixmes"] > 0:
+        print(f"WARNING: {metrics['fixmes']} FIXME(s) found")
+
+    if not metrics["issues"] and metrics["todos"] == 0 and metrics["fixmes"] == 0:
         print("No issues detected")
 
 
