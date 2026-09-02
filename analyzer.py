@@ -220,17 +220,36 @@ def analyze_ast(tree):
     }
 
 
+def count_function_arguments(function):
+    """Count all types of function arguments using the AST."""
+    arguments = function.args
+
+    count = (
+        len(arguments.posonlyargs)
+        + len(arguments.args)
+        + len(arguments.kwonlyargs)
+    )
+
+    if arguments.vararg is not None:
+        count += 1
+
+    if arguments.kwarg is not None:
+        count += 1
+
+    return count
+
+
 def analyze_functions(tree):
     functions = 0
     function_details = []
 
     #  extracting function details
     for code in ast.walk(tree):
-        if isinstance(code, ast.FunctionDef):
+        if isinstance(code, (ast.FunctionDef, ast.AsyncFunctionDef)):
             functions += 1
 
             function_name = code.name
-            argument_count = len(code.args.args)
+            argument_count = count_function_arguments(code)
             start_line = code.lineno
             end_line = code.end_lineno
             function_length = end_line - start_line + 1
@@ -253,22 +272,44 @@ def analyze_functions(tree):
     }
 
 
+class ComplexityVisitor(ast.NodeVisitor):
+    def __init__(self):
+        self.complexity = 1
+
+    def visit_If(self, node):
+        self.complexity += 1
+        self.generic_visit(node)
+
+    def visit_For(self, node):
+        self.complexity += 1
+        self.generic_visit(node)
+
+    def visit_While(self, node):
+        self.complexity += 1
+        self.generic_visit(node)
+
+    def visit_ExceptHandler(self, node):
+        self.complexity += 1
+        self.generic_visit(node)
+
+    def visit_BoolOp(self, node):
+        self.complexity += len(node.values) - 1
+        self.generic_visit(node)
+
+    def visit_FunctionDef(self, node):
+        pass
+
+    def visit_AsyncFunctionDef(self, node):
+        pass
+
+
 def calculate_complexity(function):
-    complexity = 1
+    visitor = ComplexityVisitor()
 
-    for code in ast.walk(function):
-        if isinstance(code, ast.If):
-            complexity += 1
-        if isinstance(code, ast.For):
-            complexity += 1
-        if isinstance(code, ast.While):
-            complexity += 1
-        if isinstance(code, ast.ExceptHandler):
-            complexity += 1
-        if isinstance(code, ast.BoolOp):
-            complexity += len(code.values) - 1
+    for node in function.body:
+        visitor.visit(node)
 
-    return complexity
+    return visitor.complexity
 
 
 def analyze_imports(tree):

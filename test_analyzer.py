@@ -16,6 +16,7 @@ from analyzer import (
     analyze_quality,
     calculate_complexity,
     calculate_health_score,
+    count_function_arguments,
     get_health_rating,
     parse_python_file,
     display_quality_issues_metrics,
@@ -144,6 +145,23 @@ def with_if(x):
     assert calculate_complexity(function) == 3
 
 
+def test_calculate_complexity_elif():
+    code = """
+def example(value):
+    if value == 1:
+        pass
+    elif value == 2:
+        pass
+    elif value == 3:
+        pass
+"""
+
+    tree = ast.parse(code)
+    function = tree.body[0]
+
+    assert calculate_complexity(function) == 4
+
+
 def test_calculate_complexity_with_loops():
     """Test complexity with loops"""
     code = """
@@ -185,6 +203,38 @@ def with_try():
     tree = ast.parse(code)
     function = tree.body[0]
     assert calculate_complexity(function) == 2
+
+
+def test_calculate_complexity_nested_function():
+    code = """
+def outer():
+    def inner():
+        if condition:
+            pass
+
+    return inner
+"""
+
+    tree = ast.parse(code)
+    outer_function = tree.body[0]
+
+    assert calculate_complexity(outer_function) == 1
+
+
+def test_calculate_complexity_nested_async_function():
+    code = """
+def outer():
+    async def inner():
+        if condition:
+            pass
+
+    return inner
+"""
+
+    tree = ast.parse(code)
+    outer_function = tree.body[0]
+
+    assert calculate_complexity(outer_function) == 1
 
 
 # ==================== Tests for analyze_functions ====================
@@ -238,6 +288,30 @@ x = 5
     result = analyze_functions(tree)
     assert result["functions"] == 0
     assert result["function_details"] == []
+
+
+def test_count_function_arguments():
+    code = """
+def example(a, b=10, *args, c=20, **kwargs):
+    pass
+"""
+
+    tree = ast.parse(code)
+    function = tree.body[0]
+
+    assert count_function_arguments(function) == 5
+
+
+def test_analyze_functions_async():
+    code = """
+async def fetch_data(url):
+    return url
+"""
+
+    tree = ast.parse(code)
+    result = analyze_functions(tree)
+
+    assert result["functions"] == 1
 
 
 # ==================== Tests for analyze_imports ====================
