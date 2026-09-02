@@ -17,12 +17,13 @@ from analyzer import (
     calculate_complexity,
     calculate_health_score,
     count_function_arguments,
-    count_todos_and_fixmes,
     get_health_rating,
     parse_python_file,
     display_quality_issues_metrics,
     main,
 )
+
+from analysis.lines import count_todos_and_fixmes
 
 
 # Helper function to capture stdout using a temporary file
