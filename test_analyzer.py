@@ -17,6 +17,7 @@ from analyzer import (
     calculate_complexity,
     calculate_health_score,
     count_function_arguments,
+    count_todos_and_fixmes,
     get_health_rating,
     parse_python_file,
     display_quality_issues_metrics,
@@ -112,6 +113,70 @@ def test_analyze_lines_todos_and_fixmes_in_comments():
     assert result["todos"] == 2
     assert result["fixmes"] == 1
 
+
+def test_todo_inside_string_not_counted():
+    lines = [
+        'message = "TODO: fix this later"',
+    ]
+
+    result = analyze_lines(lines)
+
+    assert result["todos"] == 0
+
+
+def test_fixme_inside_string_not_counted():
+    lines = [
+        'message = "FIXME: fix this later"',
+    ]
+
+    result = analyze_lines(lines)
+
+    assert result["fixmes"] == 0
+
+
+def test_todo_comment_is_counted():
+    lines = [
+        "# TODO: refactor this",
+    ]
+
+    result = analyze_lines(lines)
+
+    assert result["todos"] == 1
+
+
+def test_fixme_comment_is_counted():
+    lines = [
+        "# FIXME: handle this edge case",
+    ]
+
+    result = analyze_lines(lines)
+
+    assert result["fixmes"] == 1
+
+
+def test_count_todos_and_fixmes():
+    lines = [
+        "# TODO: refactor this\n",
+        'message = "TODO: not a comment"\n',
+        "# FIXME: handle this\n",
+        'message = "FIXME: not a comment"\n',
+    ]
+
+    todos, fixmes = count_todos_and_fixmes(lines)
+
+    assert todos == 1
+    assert fixmes == 1
+
+
+def test_todo_and_fixme_same_comment():
+    lines = [
+        "# TODO: FIXME: investigate this",
+    ]
+
+    result = analyze_lines(lines)
+
+    assert result["todos"] == 1
+    assert result["fixmes"] == 1
 
 # ==================== Tests for calculate_complexity ====================
 
