@@ -8,19 +8,26 @@ import json
 from analyzer import (
     analyze_file,
     analyze_lines,
+    analyze_quality,
+    calculate_health_score,
+    get_health_rating,
+    parse_python_file,
+    display_quality_issues_metrics,
+    main,
+)
+
+from analysis.ast_analysis import (
+    analyze_ast,
     analyze_functions,
     analyze_imports,
     analyze_control_flow,
     analyze_classes,
     analyze_operations,
-    analyze_quality,
+)
+
+from analysis.complexity import (
     calculate_complexity,
-    calculate_health_score,
     count_function_arguments,
-    get_health_rating,
-    parse_python_file,
-    display_quality_issues_metrics,
-    main,
 )
 
 from analysis.lines import count_todos_and_fixmes
