@@ -10,9 +10,7 @@ from analyzer import (
     analyze_lines,
     analyze_quality,
     calculate_health_score,
-    get_health_rating,
     parse_python_file,
-    display_quality_issues_metrics,
     main,
 )
 
@@ -31,6 +29,10 @@ from analysis.complexity import (
 )
 
 from analysis.lines import count_todos_and_fixmes
+
+from analysis.quality import get_health_rating
+
+from reporting.terminal import display_quality_issues_metrics
 
 
 # Helper function to capture stdout using a temporary file
