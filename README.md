@@ -74,7 +74,16 @@ The analyzer uses Python's **Abstract Syntax Tree (AST)** to inspect source file
 * 🐍 Python 3.10+
 * 🧪 `pytest` for running tests
 
-Install the dependencies:
+## ⚙️ Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/Azaucifer/codebase-health-analyzer.git
+cd codebase-health-analyzer
+```
+
+Install the required dependencies:
 
 ```bash
 pip install -r requirements.txt
@@ -221,6 +230,19 @@ Group 1
 
 Functions can be detected as duplicates even when their function names and argument names differ, provided their underlying AST structure is equivalent.
 
+## ❤️ Health Score
+
+The analyzer calculates a health score based on detected code-quality issues and structural characteristics of the analyzed codebase.
+
+The score provides a high-level indication of codebase health and is accompanied by a health rating:
+
+* 🟢 Excellent
+* 🔵 Good
+* 🟠 Needs Improvement
+* 🔴 Poor
+
+The health score is intended as a high-level analysis tool and is not a replacement for dedicated linters, testing tools, security scanners, or code review.
+
 ## 📦 JSON Output
 
 Using the `--json` option produces a machine-readable report that can be used by other tools or future automation.
@@ -296,6 +318,21 @@ The test suite currently contains **61 tests** covering:
 * 🚨 Syntax error handling
 
 GitHub Actions also runs the test suite across supported Python versions.
+
+## 🎯 Why This Project?
+
+Codebase Health Analyzer was built to explore how static-analysis tools can inspect Python source code **without executing it**.
+
+The project focuses on understanding:
+
+* 🧩 Python's Abstract Syntax Tree
+* 📊 Code metrics and complexity
+* 🛡️ Automated code-quality analysis
+* 🏗️ Modular software architecture
+* 💻 CLI application design
+* 📄 JSON-based reporting
+* 🧪 Automated testing
+* ⚙️ Continuous integration
 
 ## 📁 Project Structure
 
@@ -385,7 +422,9 @@ This separation keeps individual responsibilities isolated and makes the analyze
 
 Contributions are welcome! 🤝
 
-If you would like to contribute, please open an issue to discuss significant changes before starting work. Small bug fixes, tests, documentation improvements, and focused feature contributions are welcome.
+If you would like to contribute, please open an issue to discuss significant changes before starting work.
+
+Small bug fixes, tests, documentation improvements, and focused feature contributions are welcome.
 
 ## 📌 Current Status
 
