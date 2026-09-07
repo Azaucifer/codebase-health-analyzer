@@ -1,9 +1,10 @@
-import pytest
-from pathlib import Path
-import sys
 import ast
-import os
 import json
+import os
+import sys
+from pathlib import Path
+
+import pytest
 
 from analyzer import (
     main,
@@ -31,6 +32,10 @@ from analysis.ast_analysis import (
     analyze_control_flow,
     analyze_classes,
     analyze_operations,
+)
+
+from analysis.duplicate_detection import (
+    detect_duplicates,
 )
 
 from analysis.complexity import (
@@ -874,6 +879,56 @@ def test_main_json_output(tmp_path):
         os.chdir(original_cwd)
 
 
+def test_main_json_duplicate_output(tmp_path):
+    """Test that duplicate functions are included in JSON output"""
+    first = tmp_path / "first.py"
+    second = tmp_path / "second.py"
+
+    first.write_text(
+        "def add(a, b):\n"
+        "    return a + b\n"
+    )
+
+    second.write_text(
+        "def calculate(x, y):\n"
+        "    return x + y\n"
+    )
+
+    output_file = tmp_path / "codebase_report.json"
+
+    original_argv = sys.argv.copy()
+    original_cwd = Path.cwd()
+    sys.argv = ["analyzer.py", str(tmp_path), "--json"]
+
+    try:
+        os.chdir(tmp_path)
+
+        main()
+
+        assert output_file.exists()
+
+        with open(output_file, encoding="utf-8") as f:
+            report = json.load(f)
+
+        assert "duplicates" in report
+        assert len(report["duplicates"]) == 1
+
+        duplicate_functions = report["duplicates"][0]["functions"]
+
+        assert len(duplicate_functions) == 2
+        assert duplicate_functions[0]["file"] == "first.py"
+        assert duplicate_functions[0]["name"] == "add"
+        assert duplicate_functions[0]["start_line"] == 1
+
+        assert duplicate_functions[1]["file"] == "second.py"
+        assert duplicate_functions[1]["name"] == "calculate"
+        assert duplicate_functions[1]["start_line"] == 1
+
+    finally:
+        sys.argv = original_argv
+        os.chdir(original_cwd)
+
+
 def test_main_json_custom_output(tmp_path):
     """Test main with a custom JSON output filename"""
     test_file = tmp_path / "test.py"
@@ -1028,3 +1083,66 @@ def test():
     assert result["functions"] == 2
     assert result["function_details"][0]["name"] == "test"
     assert result["function_details"][1]["name"] == "test"
+
+
+def test_detect_duplicates(tmp_path):
+    """Test detection of structurally identical functions"""
+    first = tmp_path / "first.py"
+    second = tmp_path / "second.py"
+
+    first.write_text(
+        "def add(a, b):\n"
+        "    return a + b\n"
+    )
+
+    second.write_text(
+        "def calculate(x, y):\n"
+        "    return x + y\n"
+    )
+
+    result = detect_duplicates([first, second])
+
+    assert len(result) == 1
+    assert len(result[0]) == 2
+    assert result[0][0]["name"] == "add"
+    assert result[0][1]["name"] == "calculate"
+
+
+def test_no_duplicates(tmp_path):
+    """Test that different functions are not detected as duplicates"""
+    first = tmp_path / "first.py"
+    second = tmp_path / "second.py"
+
+    first.write_text(
+        "def add(a, b):\n"
+        "    return a + b\n"
+    )
+
+    second.write_text(
+        "def multiply(x, y):\n"
+        "    return x * y\n"
+    )
+
+    result = detect_duplicates([first, second])
+
+    assert result == []
+
+
+def test_detect_duplicates_skips_syntax_errors(tmp_path):
+    """Test that files with syntax errors are skipped"""
+    valid_file = tmp_path / "valid.py"
+    invalid_file = tmp_path / "invalid.py"
+
+    valid_file.write_text(
+        "def add(a, b):\n"
+        "    return a + b\n"
+    )
+
+    invalid_file.write_text(
+        "def broken(:\n"
+        "    return 1\n"
+    )
+
+    result = detect_duplicates([valid_file, invalid_file])
+
+    assert result == []

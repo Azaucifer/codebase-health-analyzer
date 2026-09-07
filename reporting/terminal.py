@@ -1,7 +1,7 @@
 from analysis.quality import get_health_rating
 
 
-def generate_codebase_summary(results):
+def generate_codebase_summary(results, duplicates=None):
     if not results:
         print("No valid Python files found.")
         return
@@ -50,6 +50,23 @@ def generate_codebase_summary(results):
         for issue in result["issues"]:
             print(f"  - {issue}")
         print()
+
+    print("\nDuplicate Code")
+    print("-" * 20)
+
+    if not duplicates:
+        print("No duplicate functions detected.")
+    else:
+        print(f"Duplicate groups: {len(duplicates)}")
+
+        for index, group in enumerate(duplicates, start=1):
+            print(f"\nGroup {index}")
+
+            for function in group:
+                print(
+                    f"  {function['name']}() - "
+                    f"{function['file'].name}:{function['start_line']}"
+                )
 
 
 def display_line_metrics(metrics):
