@@ -3,6 +3,7 @@ from pathlib import Path
 from cli.arguments import create_parser
 
 from analysis.file_analysis import analyze_file
+from analysis.duplicate_detection import detect_duplicates
 
 from reporting.terminal import (
     generate_codebase_summary,
@@ -38,6 +39,8 @@ def analyze_codebase(
         output_file="codebase_report.json",
         ):
     results = []
+    duplicates = detect_duplicates(py_files)
+
     for file in py_files:
         metrics = analyze_file(file)
 
@@ -51,11 +54,11 @@ def analyze_codebase(
         generate_report(metrics)
         print()
 
-    generate_codebase_summary(results)
+    generate_codebase_summary(results, duplicates)
     print()
 
     if generate_json:
-        generate_json_report(results, output_file)
+        generate_json_report(results, output_file, duplicates)
 
 
 if __name__ == "__main__":

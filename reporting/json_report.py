@@ -3,7 +3,11 @@ import json
 from analysis.quality import get_health_rating
 
 
-def generate_json_report(results, output_file="codebase_report.json"):
+def generate_json_report(
+    results,
+    output_file="codebase_report.json",
+    duplicates=None,
+):
     if not results:
         print("No valid Python files found.")
         return
@@ -30,6 +34,19 @@ def generate_json_report(results, output_file="codebase_report.json"):
             "average_health_score": round(average_health_score, 1),
             "rating": get_health_rating(average_health_score),
         },
+        "duplicates": [
+            {
+                "functions": [
+                    {
+                        "file": function["file"].name,
+                        "name": function["name"],
+                        "start_line": function["start_line"],
+                    }
+                    for function in group
+                ]
+            }
+            for group in (duplicates or [])
+        ],
         "files": [],
     }
 
