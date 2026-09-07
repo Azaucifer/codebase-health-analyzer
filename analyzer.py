@@ -1,5 +1,6 @@
 from pathlib import Path
-import argparse
+
+from cli.arguments import create_parser
 
 from analysis.file_analysis import analyze_file
 
@@ -12,27 +13,7 @@ from reporting.json_report import generate_json_report
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Analyze a Python codebase and generate a health report."
-    )
-
-    parser.add_argument(
-        "path",
-        help="Path to the Python codebase",
-    )
-
-    parser.add_argument(
-        "--json",
-        action="store_true",
-        help="Generate a JSON report",
-    )
-
-    parser.add_argument(
-        "--output",
-        default="codebase_report.json",
-        help="Output file for the JSON report"
-    )
-
+    parser = create_parser()
     args = parser.parse_args()
 
     p = Path(args.path)
