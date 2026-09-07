@@ -1,10 +1,12 @@
 # Codebase Health Analyzer
 
-A Python-based tool for analyzing the **health, structure, maintainability, and complexity** of Python codebases.
+A Python-based static analysis tool for evaluating the **health, structure, maintainability, and complexity** of Python codebases.
 
-The analyzer uses Python's **Abstract Syntax Tree (AST)** to inspect Python source files and generate detailed codebase health reports.
+The analyzer uses Python's **Abstract Syntax Tree (AST)** to inspect source files, identify potential code-quality issues, detect duplicated functions, and generate codebase health reports.
 
 ## Features
+
+### Code Analysis
 
 * 📁 Recursively scans Python files in a directory
 * 📊 Calculates line-level metrics
@@ -31,28 +33,40 @@ The analyzer uses Python's **Abstract Syntax Tree (AST)** to inspect Python sour
   * Return statements
   * Raised exceptions
   * Assertions
-* 🔍 Performs function-level analysis
 
-  * Function starting line
-  * Function length
-  * Number of arguments
-  * Cyclomatic-style complexity
-* ⚠️ Detects potential code quality issues
+### Function Analysis
 
-  * Long functions
-  * Functions with too many arguments
-  * High-complexity functions
-  * `TODO` comments
-  * `FIXME` comments
+* 🔍 Function starting line
+* 📏 Function length
+* 🔢 Number of arguments
+* 🧠 Cyclomatic-style complexity
+* 🔁 Structural duplicate-function detection using AST normalization
+
+### Code Quality
+
+* ⚠️ Detects long functions
+* ⚠️ Detects functions with too many arguments
+* ⚠️ Detects high-complexity functions
+* 📝 Detects `TODO` comments
+* 📝 Detects `FIXME` comments
 * ❤️ Calculates a codebase health score
-* 🏷️ Assigns a health rating
+* 🏷️ Assigns a health rating:
 
   * Excellent
   * Good
   * Needs Improvement
   * Poor
-* 📄 Generates JSON reports for programmatic use
-* 🧪 Includes automated tests using `pytest`
+
+### Reporting
+
+* 🖥️ Detailed terminal reports
+* 📄 Machine-readable JSON reports
+* 🔁 Duplicate-code reporting in terminal and JSON output
+
+### Reliability
+
+* 🧪 Automated test suite using `pytest`
+* ⚙️ Continuous integration using GitHub Actions
 * 🛡️ Handles Python files containing syntax errors without stopping the entire analysis
 
 ## Requirements
@@ -74,7 +88,7 @@ Analyze a Python codebase:
 python analyzer.py C:/path/to/project
 ```
 
-Display the command-line help:
+Display command-line help:
 
 ```bash
 python analyzer.py --help
@@ -92,7 +106,7 @@ The JSON report is saved as:
 codebase_report.json
 ```
 
-The generated report is excluded from version control through `.gitignore`.
+Generated reports are excluded from version control through `.gitignore`.
 
 ## Example Output
 
@@ -147,6 +161,25 @@ Score: 72/100
 Rating: Needs Improvement
 ```
 
+### Duplicate Code
+
+The analyzer also identifies structurally identical functions.
+
+For example:
+
+```text
+Duplicate Code
+--------------------
+
+Duplicate groups: 1
+
+Group 1
+  add() - one.py:1
+  calculate() - two.py:1
+```
+
+Functions can be detected as duplicates even when their function names and argument names differ, provided their underlying AST structure is equivalent.
+
 ## JSON Output
 
 Using the `--json` option produces a machine-readable report that can be used by other tools or future automation.
@@ -165,6 +198,22 @@ Example structure:
     "average_health_score": 87.5,
     "rating": "Good"
   },
+  "duplicates": [
+    {
+      "functions": [
+        {
+          "file": "one.py",
+          "name": "add",
+          "start_line": 1
+        },
+        {
+          "file": "two.py",
+          "name": "calculate",
+          "start_line": 1
+        }
+      ]
+    }
+  ],
   "files": [
     {
       "file": "analyzer.py",
@@ -179,13 +228,13 @@ Example structure:
 
 ## Testing
 
-Run the test suite with:
+Run the complete test suite with:
 
 ```bash
 python -m pytest test_analyzer.py
 ```
 
-The project currently contains automated tests covering:
+The test suite currently contains **61 tests** covering:
 
 * Line analysis
 * Complexity calculation
@@ -196,14 +245,36 @@ The project currently contains automated tests covering:
 * Operation analysis
 * Quality issue detection
 * Health score calculation
-* Syntax error handling
+* Duplicate-function detection
+* Duplicate detection with syntax errors
 * CLI behavior
 * JSON report generation
+* JSON duplicate-report integration
+* Syntax error handling
+
+GitHub Actions also runs the test suite across supported Python versions.
 
 ## Project Structure
 
 ```text
 codebase-health-analyzer/
+│
+├── analysis/
+│   ├── __init__.py
+│   ├── ast_analysis.py
+│   ├── complexity.py
+│   ├── duplicate_detection.py
+│   ├── file_analysis.py
+│   ├── lines.py
+│   └── quality.py
+│
+├── cli/
+│   ├── __init__.py
+│   └── arguments.py
+│
+├── reporting/
+│   ├── json_report.py
+│   └── terminal.py
 │
 ├── analyzer.py
 ├── test_analyzer.py
@@ -222,14 +293,15 @@ Python Codebase
        ▼
 Find Python Files
        │
-       ▼
-Parse Source with AST
+       ├─────────────────────┐
+       ▼                     ▼
+Parse Source with AST    Analyze Lines
        │
-       ├── Line Analysis
        ├── Structure Analysis
        ├── Control Flow Analysis
        ├── Operation Analysis
-       └── Function Analysis
+       ├── Function Analysis
+       └── Duplicate Detection
        │
        ▼
 Quality Analysis
@@ -241,11 +313,55 @@ Health Score
        └── JSON Report
 ```
 
+## Architecture
+
+The project separates analysis, command-line handling, and reporting into dedicated modules:
+
+```text
+analyzer.py
+    │
+    ├── cli/
+    │   └── arguments.py
+    │
+    ├── analysis/
+    │   ├── file_analysis.py
+    │   ├── lines.py
+    │   ├── ast_analysis.py
+    │   ├── complexity.py
+    │   ├── quality.py
+    │   └── duplicate_detection.py
+    │
+    └── reporting/
+        ├── terminal.py
+        └── json_report.py
+```
+
+This separation keeps individual responsibilities isolated and makes the analyzer easier to test, maintain, and extend.
+
+## Open Source
+
+Contributions are welcome.
+
+If you would like to contribute, please open an issue to discuss significant changes before starting work. Small bug fixes, tests, documentation improvements, and focused feature contributions are welcome.
+
 ## Current Status
 
 The project is actively being developed.
 
-Current focus areas include improving codebase analysis, expanding quality checks, improving reporting, and adding more useful developer-oriented features.
+Current capabilities include:
+
+* Python source-code analysis using AST
+* Code and structural metrics
+* Function complexity analysis
+* Code-quality checks
+* Health scoring
+* Duplicate-function detection
+* Terminal reporting
+* JSON reporting
+* Automated testing
+* Continuous integration with GitHub Actions
+
+Development will focus on improvements that provide meaningful value to developers while keeping the analyzer focused and maintainable.
 
 ## License
 
