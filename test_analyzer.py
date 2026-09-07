@@ -6,12 +6,22 @@ import os
 import json
 
 from analyzer import (
+    main,
+)
+
+from analysis.file_analysis import (
     analyze_file,
+    parse_python_file,
+)
+
+from analysis.lines import (
     analyze_lines,
+)
+
+from analysis.quality import (
     analyze_quality,
     calculate_health_score,
-    parse_python_file,
-    main,
+    get_health_rating,
 )
 
 from analysis.ast_analysis import (
@@ -30,8 +40,6 @@ from analysis.complexity import (
 
 from analysis.lines import count_todos_and_fixmes
 
-from analysis.quality import get_health_rating
-
 from reporting.terminal import display_quality_issues_metrics
 
 
@@ -39,13 +47,14 @@ from reporting.terminal import display_quality_issues_metrics
 def capture_output(func, *args, **kwargs):
     """Capture stdout while running a function"""
     import tempfile
+
     old_stdout = sys.stdout
-    temp_file = tempfile.NamedTemporaryFile(mode='w+', delete=False)
+    temp_file = tempfile.NamedTemporaryFile(mode="w+", delete=False)
     sys.stdout = temp_file
     try:
         func(*args, **kwargs)
         temp_file.flush()
-        with open(temp_file.name, 'r') as f:
+        with open(temp_file.name, "r") as f:
             return f.read()
     finally:
         sys.stdout = old_stdout
